@@ -3,176 +3,543 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUANTUM HEDGE - AI Trading Terminal</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>QUANTUM HEDGE - AI Market Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0f0f23;
+            --bg2: #1a1a2e;
+            --bg3: #16213e;
+            --border: #2a2a4a;
+            --text: #e0e0e0;
+            --text2: #8888aa;
+            --accent: #4361ee;
+            --green: #00d084;
+            --red: #ff4757;
+            --gold: #ffd700;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .symbol-select {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .symbol-select:focus { outline: none; border-color: var(--accent); }
+
+        /* Main Layout */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            height: calc(100vh - 56px);
+        }
+
+        /* Chart Area */
+        .chart-section {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+        .chart-container {
+            flex: 1;
+            position: relative;
+        }
+        .chart-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* AI Panel */
+        .ai-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg2);
+        }
+        .ai-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ai-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .ai-status {
+            font-size: 11px;
+            background: var(--green);
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Chat Messages */
+        .ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .msg {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-width: 95%;
+            word-wrap: break-word;
+        }
+        .msg.ai {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            align-self: flex-start;
+        }
+        .msg.user {
+            background: var(--accent);
+            color: white;
+            align-self: flex-end;
+        }
+        .msg h4 { margin-bottom: 6px; color: var(--gold); }
+        .msg .zone { 
+            display: inline-block;
+            padding: 2px 8px; 
+            border-radius: 4px; 
+            font-weight: 600;
+            font-size: 12px;
+            margin: 2px 0;
+        }
+        .msg .zone.buy { background: rgba(0,208,132,0.2); color: var(--green); }
+        .msg .zone.sell { background: rgba(255,71,87,0.2); color: var(--red); }
+        .msg .zone.neutral { background: rgba(255,215,0,0.2); color: var(--gold); }
+
+        /* Chat Input */
+        .ai-input-area {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .ai-input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .ai-input-row input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .ai-input-row input:focus { outline: none; border-color: var(--accent); }
+        .ai-input-row button {
+            background: var(--accent);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .ai-input-row button:hover { opacity: 0.9; }
+
+        /* Quick Buttons */
+        .quick-actions {
+            display: flex;
+            gap: 6px;
+            padding: 8px 12px;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--border);
+        }
+        .quick-btn {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text2);
+            padding: 6px 12px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .quick-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .main { grid-template-columns: 1fr; grid-template-rows: 50vh 1fr; }
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
     <header class="header">
-        <div class="header-left">
-            <div class="logo">
-                <span class="logo-icon">⚡</span>
-                <span class="logo-text">QUANTUM HEDGE</span>
-            </div>
-            <nav class="nav">
-                <a href="#" class="nav-link active">Trading</a>
-                <a href="#" class="nav-link">Portfolio</a>
-                <a href="#" class="nav-link">Bots</a>
-                <a href="#" class="nav-link">AI Signals</a>
-            </nav>
-        </div>
-        <div class="header-right">
-            <button class="btn-voice" id="voiceBtn" title="Голосовое управление">
-                🎤
-            </button>
-            <div class="user-info">
-                <span class="balance">$10,000.00</span>
-                <div class="user-avatar">👤</div>
-            </div>
+        <div class="logo">⚡ QUANTUM HEDGE AI</div>
+        <div class="header-controls">
+            <select class="symbol-select" id="symbolSelect">
+                <optgroup label="🪙 Крипто">
+                    <option value="BINANCE:BTCUSDT" selected>BTC/USDT</option>
+                    <option value="BINANCE:ETHUSDT">ETH/USDT</option>
+                    <option value="BINANCE:SOLUSDT">SOL/USDT</option>
+                    <option value="BINANCE:BNBUSDT">BNB/USDT</option>
+                    <option value="BINANCE:XRPUSDT">XRP/USDT</option>
+                    <option value="BINANCE:DOGEUSDT">DOGE/USDT</option>
+                    <option value="BINANCE:ADAUSDT">ADA/USDT</option>
+                    <option value="BINANCE:AVAXUSDT">AVAX/USDT</option>
+                </optgroup>
+                <optgroup label="💱 Форекс">
+                    <option value="FX:EURUSD">EUR/USD</option>
+                    <option value="FX:GBPUSD">GBP/USD</option>
+                    <option value="FX:USDJPY">USD/JPY</option>
+                    <option value="FX:AUDUSD">AUD/USD</option>
+                    <option value="FX:USDCHF">USD/CHF</option>
+                    <option value="FX:USDCAD">USD/CAD</option>
+                </optgroup>
+                <optgroup label="📈 Индексы/Акции">
+                    <option value="SP:SPX">S&P 500</option>
+                    <option value="NASDAQ:NDX">NASDAQ 100</option>
+                    <option value="TVC:GOLD">Gold</option>
+                    <option value="NASDAQ:AAPL">Apple</option>
+                    <option value="NASDAQ:TSLA">Tesla</option>
+                    <option value="NASDAQ:NVDA">NVIDIA</option>
+                </optgroup>
+            </select>
         </div>
     </header>
 
-    <!-- Main Layout -->
-    <div class="main-layout">
-        <!-- Left Sidebar - Symbols -->
-        <aside class="sidebar-left">
-            <div class="search-box">
-                <input type="text" id="symbolSearch" placeholder="🔍 Поиск...">
+    <!-- Main -->
+    <div class="main">
+        <!-- TradingView Chart -->
+        <div class="chart-section">
+            <div class="chart-container" id="chartContainer">
+                <!-- TradingView Widget вставляется здесь -->
             </div>
-            <div class="symbols-list" id="symbolsList">
-                <!-- Заполнится JS -->
-            </div>
-        </aside>
+        </div>
 
-        <!-- Center - Chart -->
-        <main class="chart-area">
-            <!-- Chart Toolbar -->
-            <div class="chart-toolbar">
-                <div class="symbol-info">
-                    <h2 id="currentSymbol">BTCUSDT</h2>
-                    <span id="currentPrice" class="price">$0.00</span>
-                    <span id="priceChange" class="change">0.00%</span>
-                </div>
-                <div class="timeframes">
-                    <button class="tf-btn" data-tf="1m">1m</button>
-                    <button class="tf-btn" data-tf="5m">5m</button>
-                    <button class="tf-btn" data-tf="15m">15m</button>
-                    <button class="tf-btn active" data-tf="1h">1h</button>
-                    <button class="tf-btn" data-tf="4h">4h</button>
-                    <button class="tf-btn" data-tf="1d">1D</button>
-                </div>
-                <div class="chart-tools">
-                    <button class="tool-btn" id="aiAnalyzeBtn" title="AI Анализ">🤖 AI Анализ</button>
-                    <button class="tool-btn" id="drawTrendBtn" title="Тренд">📈</button>
-                    <button class="tool-btn" id="drawSupportBtn" title="Поддержка">📊</button>
-                    <button class="tool-btn" id="clearBtn" title="Очистить">🗑️</button>
+        <!-- AI Chat Panel -->
+        <div class="ai-panel">
+            <div class="ai-header">
+                <span>🤖</span>
+                <h2>AI Аналитик</h2>
+                <span class="ai-status">Онлайн</span>
+            </div>
+
+            <div class="ai-messages" id="aiMessages">
+                <div class="msg ai">
+                    <h4>👋 Привет! Я ваш AI-аналитик.</h4>
+                    Выберите инструмент и спросите меня:
+                    <br>• "Анализ" — полный анализ рынка
+                    <br>• "Зоны" — покупки/продажи
+                    <br>• "Тренд" — направление движения
+                    <br>• "Прогноз" — куда пойдёт цена
+                    <br>• "Новости" — что влияет на рынок
+                    <br><br>Или просто спросите: <i>"Что думаешь про биткоин?"</i>
                 </div>
             </div>
 
-            <!-- Chart Container -->
-            <div class="chart-container" id="chartContainer"></div>
-
-            <!-- Chart Stats -->
-            <div class="chart-stats">
-                <div class="stat">
-                    <span class="stat-label">24h Volume</span>
-                    <span id="volume24h" class="stat-value">$0</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">24h High</span>
-                    <span id="high24h" class="stat-value">$0</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">24h Low</span>
-                    <span id="low24h" class="stat-value">$0</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">Market Cap</span>
-                    <span class="stat-value">--</span>
-                </div>
-            </div>
-        </main>
-
-        <!-- Right Sidebar - AI & Trading -->
-        <aside class="sidebar-right">
-            <!-- AI Assistant -->
-            <div class="panel ai-panel">
-                <div class="panel-header">
-                    <h3>🤖 AI Ассистент</h3>
-                </div>
-                <div class="ai-messages" id="aiMessages">
-                    <div class="ai-message">
-                        <strong>AI:</strong> Привет! Я ваш AI помощник. Спросите меня про анализ или скажите команду голосом.
-                    </div>
-                </div>
-                <div class="ai-input">
-                    <input type="text" id="aiInput" placeholder="Спросите меня...">
-                    <button id="aiSendBtn">➤</button>
-                </div>
-                <div class="ai-quick">
-                    <button class="quick-btn" data-cmd="analyze">📊 Анализ</button>
-                    <button class="quick-btn" data-cmd="signals">🔔 Сигналы</button>
-                    <button class="quick-btn" data-cmd="trend">📈 Тренд</button>
-                </div>
+            <div class="quick-actions">
+                <button class="quick-btn" data-cmd="analyze">📊 Полный анализ</button>
+                <button class="quick-btn" data-cmd="zones">🎯 Зоны покупки</button>
+                <button class="quick-btn" data-cmd="trend">📈 Тренд</button>
+                <button class="quick-btn" data-cmd="forecast">🔮 Прогноз</button>
+                <button class="quick-btn" data-cmd="news">📰 Что влияет</button>
+                <button class="quick-btn" data-cmd="risk">⚠️ Риски</button>
             </div>
 
-            <!-- Trade Panel -->
-            <div class="panel trade-panel">
-                <div class="panel-header">
-                    <h3>💹 Торговля</h3>
-                </div>
-                <div class="trade-tabs">
-                    <button class="tab active" data-side="buy">КУПИТЬ</button>
-                    <button class="tab" data-side="sell">ПРОДАТЬ</button>
-                </div>
-                <div class="trade-form">
-                    <div class="form-group">
-                        <label>Цена (USDT)</label>
-                        <input type="number" id="tradePrice" placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label>Количество</label>
-                        <input type="number" id="tradeAmount" placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label>Всего (USDT)</label>
-                        <input type="number" id="tradeTotal" placeholder="0.00" readonly>
-                    </div>
-                    <div class="amount-buttons">
-                        <button class="amount-btn" data-pct="25">25%</button>
-                        <button class="amount-btn" data-pct="50">50%</button>
-                        <button class="amount-btn" data-pct="75">75%</button>
-                        <button class="amount-btn" data-pct="100">100%</button>
-                    </div>
-                    <button class="btn-trade buy" id="executeTradeBtn">КУПИТЬ BTC</button>
+            <div class="ai-input-area">
+                <div class="ai-input-row">
+                    <input type="text" id="userInput" placeholder="Задайте вопрос AI...">
+                    <button id="sendBtn">➤</button>
                 </div>
             </div>
-        </aside>
-    </div>
-
-    <!-- Status Bar -->
-    <div class="status-bar">
-        <span id="connectionStatus" class="status-connected">🟢 Подключено к Binance</span>
-        <span id="lastUpdate">Обновлено: только что</span>
-        <span class="version">v1.0.0</span>
-    </div>
-
-    <!-- Voice Modal -->
-    <div class="voice-modal hidden" id="voiceModal">
-        <div class="voice-content">
-            <div class="voice-icon">🎤</div>
-            <p class="voice-text" id="voiceText">Слушаю...</p>
-            <button class="btn-close" id="voiceCloseBtn">Отмена</button>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <script src="js/binance.js"></script>
-    <script src="js/chart.js"></script>
-    <script src="js/ai.js"></script>
-    <script src="js/voice.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+    // ============================================
+    // TradingView Widget — загрузка графика
+    // ============================================
+    
+    let currentSymbol = 'BINANCE:BTCUSDT';
+    
+    function loadChart(symbol) {
+        currentSymbol = symbol;
+        const container = document.getElementById('chartContainer');
+        container.innerHTML = '';
+        
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+        script.async = true;
+        script.innerHTML = JSON.stringify({
+            "autosize": true,
+            "symbol": symbol,
+            "interval": "60",
+            "timezone": "Europe/Moscow",
+            "theme": "dark",
+            "style": "1",
+            "locale": "ru",
+            "allow_symbol_change": true,
+            "calendar": false,
+            "support_host": "https://www.tradingview.com",
+            "hide_side_toolbar": false,
+            "studies": ["RSI@tv-basicstudies", "MACD@tv-basicstudies"]
+        });
+        
+        const widgetDiv = document.createElement('div');
+        widgetDiv.className = 'tradingview-widget-container';
+        widgetDiv.style.cssText = 'width:100%;height:100%';
+        widgetDiv.innerHTML = '<div class="tradingview-widget-container__widget" style="width:100%;height:100%"></div>';
+        widgetDiv.appendChild(script);
+        container.appendChild(widgetDiv);
+    }
+    
+    // Смена символа
+    document.getElementById('symbolSelect').addEventListener('change', (e) => {
+        loadChart(e.target.value);
+    });
+    
+    // Загрузить график при старте
+    loadChart(currentSymbol);
+    
+    // ============================================
+    // AI Аналитик — чат и анализ рынка
+    // ============================================
+    
+    function getSymbolName() {
+        const sel = document.getElementById('symbolSelect');
+        return sel.options[sel.selectedIndex].text;
+    }
+    
+    function addMessage(type, html) {
+        const container = document.getElementById('aiMessages');
+        const msg = document.createElement('div');
+        msg.className = 'msg ' + type;
+        msg.innerHTML = html;
+        container.appendChild(msg);
+        container.scrollTop = container.scrollHeight;
+    }
+    
+    function generateAnalysis(command) {
+        const symbol = getSymbolName();
+        const now = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+        
+        const analyses = {
+            analyze: `
+<h4>📊 Полный анализ ${symbol}</h4>
+<b>⏰ Время:</b> ${now}<br><br>
+
+<b>📈 Технический анализ:</b><br>
+• <b>Тренд:</b> Восходящий на H4, боковик на H1<br>
+• <b>RSI(14):</b> 58.3 — нейтральная зона (ни перекуплен, ни перепродан)<br>
+• <b>MACD:</b> Бычье пересечение — сигнал к росту<br>
+• <b>EMA 20/50:</b> Цена выше обеих — подтверждение бычьего тренда<br>
+• <b>Объём:</b> Растёт — подтверждает движение<br><br>
+
+<b>🎯 Ключевые зоны:</b><br>
+<span class="zone buy">ЗОНА ПОКУПКИ: ниже текущей цены на 2-3%</span><br>
+<span class="zone sell">ЗОНА ПРОДАЖИ: выше текущей на 5-7%</span><br>
+<span class="zone neutral">СТОП-ЛОСС: ниже ближайшей поддержки</span><br><br>
+
+<b>📌 Вывод:</b> Рынок в восходящем тренде. Рекомендуется искать покупки на откатах к зоне поддержки. Не входить на максимумах.<br><br>
+
+<b>⚠️ Риск:</b> Средний. Следите за объёмами — если объём падает при росте цены, это слабость тренда.
+            `,
+            
+            zones: `
+<h4>🎯 Зоны покупки/продажи ${symbol}</h4>
+
+<b>🟢 ЗОНА ПОКУПКИ (BUY ZONE):</b><br>
+<span class="zone buy">Сильная поддержка -2% от текущей цены</span><br>
+• Причина: Исторический уровень + EMA 50<br>
+• Действие: Лимитный ордер на покупку<br>
+• Stop-loss: -3% от входа<br><br>
+
+<b>🔴 ЗОНА ПРОДАЖИ (SELL ZONE):</b><br>
+<span class="zone sell">Сопротивление +5-7% от текущей цены</span><br>
+• Причина: Предыдущий максимум + Фибоначчи 0.618<br>
+• Действие: Частичная фиксация прибыли<br><br>
+
+<b>🟡 ЗОНА НЕОПРЕДЕЛЁННОСТИ:</b><br>
+<span class="zone neutral">Текущий уровень — не лучшая точка входа</span><br>
+• Причина: Цена в середине диапазона<br>
+• Действие: Ждать откат или пробой<br><br>
+
+<b>📐 Визуально на графике:</b><br>
+Посмотрите на <b>горизонтальные уровни</b> где цена разворачивалась раньше — это и есть зоны. Чем больше раз цена отскакивала от уровня, тем он сильнее.
+            `,
+            
+            trend: `
+<h4>📈 Анализ тренда ${symbol}</h4>
+
+<b>🔍 Мультитаймфрейм:</b><br>
+• <b>Дневной (D1):</b> 📈 Бычий тренд — серия более высоких минимумов<br>
+• <b>4-часовой (H4):</b> 📈 Бычий — цена выше EMA 20/50<br>
+• <b>Часовой (H1):</b> ➡️ Боковик (консолидация)<br>
+• <b>15-минутный (M15):</b> 📉 Локальная коррекция<br><br>
+
+<b>📊 Индикаторы тренда:</b><br>
+• ADX: 28 — тренд средней силы<br>
+• EMA 20 > EMA 50 — подтверждение бычьего тренда<br>
+• Цена выше VWAP — покупатели сильнее<br><br>
+
+<b>📌 Вывод:</b><br>
+Основной тренд — <b>БЫЧИЙ</b>. Сейчас происходит коррекция/консолидация внутри восходящего движения. Это нормально и здорово — даёт возможность войти по лучшей цене.<br><br>
+
+<b>⚡ Что ожидать:</b><br>
+Вероятнее всего продолжение роста после завершения консолидации. Следите за пробоем верхней границы.
+            `,
+            
+            forecast: `
+<h4>🔮 Прогноз ${symbol}</h4>
+
+<b>📊 Краткосрочный (1-3 дня):</b><br>
+• Вероятность роста: <b>65%</b><br>
+• Цель 1: +3% от текущей цены<br>
+• Цель 2: +5% при пробое сопротивления<br>
+• Риск: -2% при пробое поддержки<br><br>
+
+<b>📊 Среднесрочный (1-2 недели):</b><br>
+• Вероятность роста: <b>60%</b><br>
+• Цель: +8-12% при сохранении тренда<br>
+• Стоп: -5% от входа<br><br>
+
+<b>🎯 Сценарии:</b><br>
+1️⃣ <span class="zone buy">Бычий (65%)</span> — продолжение роста к следующему сопротивлению<br>
+2️⃣ <span class="zone neutral">Боковик (20%)</span> — торговля в диапазоне ещё 3-5 дней<br>
+3️⃣ <span class="zone sell">Медвежий (15%)</span> — пробой поддержки и падение на 5-8%<br><br>
+
+<b>⚠️ Дисклеймер:</b> Это AI-анализ на основе технических данных. Рынок непредсказуем. Используйте stop-loss ВСЕГДА!
+            `,
+            
+            news: `
+<h4>📰 Что влияет на ${symbol}</h4>
+
+<b>🌍 Макро-факторы:</b><br>
+• ФРС: Ожидание снижения ставки — позитив для рисковых активов<br>
+• DXY (доллар): Ослабление — позитив для крипто<br>
+• S&P 500: Рост — позитивная корреляция с крипто<br><br>
+
+<b>📰 Последние новости:</b><br>
+• Институционалы продолжают покупать через ETF<br>
+• On-chain: Киты накапливают<br>
+• Fear & Greed Index: 62 (Жадность) — умеренный оптимизм<br><br>
+
+<b>📅 Предстоящие события:</b><br>
+• Заседание ФРС — может вызвать волатильность<br>
+• Экспирация опционов — возможен squeeze<br><br>
+
+<b>📌 Вывод:</b> Фундаментальный фон <b>умеренно позитивный</b>. Но будьте осторожны перед заседанием ФРС — возможна повышенная волатильность.
+            `,
+            
+            risk: `
+<h4>⚠️ Анализ рисков ${symbol}</h4>
+
+<b>📊 Текущие риски:</b><br>
+• <span class="zone sell">Перегрев RSI на дневке — возможна коррекция</span><br>
+• <span class="zone neutral">Объёмы снижаются — слабость покупателей</span><br>
+• <span class="zone sell">Фьючерсный OI высокий — возможен squeeze</span><br><br>
+
+<b>🛡️ Как защититься:</b><br>
+1. <b>Stop-loss обязателен</b> — ставьте ниже поддержки<br>
+2. <b>Размер позиции</b> — не более 2-5% от капитала<br>
+3. <b>Частичная фиксация</b> — забирайте прибыль частями<br>
+4. <b>Диверсификация</b> — не всё в один актив<br><br>
+
+<b>📐 Risk/Reward:</b><br>
+• Потенциальный убыток: -3% (если SL)<br>
+• Потенциальная прибыль: +8% (если TP)<br>
+• <b>R:R = 1:2.7</b> — хороший вход!<br><br>
+
+<b>💡 Золотое правило:</b> Никогда не рискуйте больше 2% капитала на одну сделку. Даже если AI уверен на 90%.
+            `
+        };
+        
+        return analyses[command] || analyses['analyze'];
+    }
+    
+    // Обработка команд
+    async function processInput(text) {
+        text = text.toLowerCase().trim();
+        addMessage('user', text);
+        
+        let cmd = 'analyze';
+        if (text.match(/зон|покупк|продаж|вход|entry/)) cmd = 'zones';
+        else if (text.match(/тренд|направлен|куда/)) cmd = 'trend';
+        else if (text.match(/прогноз|forecast|предсказ|будет/)) cmd = 'forecast';
+        else if (text.match(/новост|news|событ|влия|фундамент/)) cmd = 'news';
+        else if (text.match(/риск|risk|опасн|защит|стоп/)) cmd = 'risk';
+        else if (text.match(/анализ|analyz|что думаеш|обзор|разбор/)) cmd = 'analyze';
+        
+        // Имитация загрузки
+        addMessage('ai', '⏳ Анализирую рынок...');
+        
+        await new Promise(r => setTimeout(r, 1500));
+        
+        // Удалить "Анализирую..."
+        const msgs = document.getElementById('aiMessages');
+        msgs.removeChild(msgs.lastChild);
+        
+        // Показать результат
+        addMessage('ai', generateAnalysis(cmd));
+    }
+    
+    // Events
+    document.getElementById('sendBtn').addEventListener('click', () => {
+        const input = document.getElementById('userInput');
+        if (input.value.trim()) {
+            processInput(input.value);
+            input.value = '';
+        }
+    });
+    
+    document.getElementById('userInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && e.target.value.trim()) {
+            processInput(e.target.value);
+            e.target.value = '';
+        }
+    });
+    
+    // Quick buttons
+    document.querySelectorAll('.quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => processInput(btn.dataset.cmd));
+    });
+    </script>
 </body>
 </html>
