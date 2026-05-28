@@ -5,8 +5,7 @@
   "description": "AI-Powered Crypto Trading Ecosystem",
   "workspaces": [
     "apps/*",
-    "services/*",
-    "packages/*"
+    "services/*"
   ],
   "scripts": {
     "dev": "turbo run dev",

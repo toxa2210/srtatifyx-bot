@@ -1,68 +1,72 @@
 /**
- * DCA (Dollar Cost Averaging) Bot
- * Buys at regular intervals or on price drops to average entry price
+ * DCA (Dollar Cost Averaging) Bot - Бот усреднения цены
+ * 
+ * Стратегия: покупает на регулярной основе или на падениях,
+ * чтобы усреднить цену входа в позицию
+ * Лучше всего работает в падающем рынке с восстановлением
  */
 
 export interface DCABotConfig {
-  symbol: string;
-  totalInvestment: number;
-  orderAmount: number;
-  intervalType: 'TIME' | 'PRICE' | 'SMART';
-  intervalValue: number; // Hours (TIME) or % drop (PRICE)
-  safetyOrders: number;
-  safetyOrderDeviation: number;
-  takeProfit: number;
-  stopLoss?: number;
-  trailingTakeProfit?: boolean;
+  symbol: string;                                         // Торговая пара
+  totalInvestment: number;                                // Общая сумма инвестиций
+  orderAmount: number;                                    // Сумма каждой покупки
+  intervalType: 'TIME' | 'PRICE' | 'SMART';              // Тип интервала
+  intervalValue: number;                                  // Значение (часы или %)
+  safetyOrders: number;                                   // Кол-во страховочных ордеров
+  safetyOrderDeviation: number;                          // Отклонение для страховки (%)
+  takeProfit: number;                                     // Целевая прибыль (%)
+  stopLoss?: number;                                      // Stop-loss (%)
+  trailingTakeProfit?: boolean;                          // Скользящий take-profit
 }
 
 export interface DCAOrder {
-  orderNumber: number;
-  price: number;
-  amount: number;
-  quantity: number;
-  status: 'PENDING' | 'FILLED' | 'CANCELLED';
-  filledAt?: Date;
+  orderNumber: number;                                    // Номер ордера
+  price: number;                                          // Цена покупки
+  amount: number;                                         // Сумма
+  quantity: number;                                       // Количество монет
+  status: 'PENDING' | 'FILLED' | 'CANCELLED';            // Статус
+  filledAt?: Date;                                        // Время заполнения
 }
 
 export class DCABot {
   private config: DCABotConfig;
   private orders: DCAOrder[] = [];
   private isRunning: boolean = false;
-  private avgEntryPrice: number = 0;
-  private totalQuantity: number = 0;
-  private totalInvested: number = 0;
-  private currentDeviation: number = 0;
+  private avgEntryPrice: number = 0;          // Средняя цена входа
+  private totalQuantity: number = 0;           // Общее количество
+  private totalInvested: number = 0;           // Всего инвестировано
+  private currentDeviation: number = 0;        // Текущее отклонение
 
   constructor(config: DCABotConfig) {
     this.config = config;
   }
 
   /**
-   * Start the bot
+   * Запустить бота
+   * Делает первую покупку по рыночной цене
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      throw new Error('Bot is already running');
+      throw new Error('Бот уже запущен');
     }
 
     this.isRunning = true;
-    console.log(`🤖 DCA Bot started for ${this.config.symbol}`);
-    console.log(`💰 Total investment: $${this.config.totalInvestment}`);
-    console.log(`📊 Order amount: $${this.config.orderAmount}`);
-    console.log(`🛡️ Safety orders: ${this.config.safetyOrders}`);
+    console.log(`🤖 DCA Bot запущен для ${this.config.symbol}`);
+    console.log(`💰 Общие инвестиции: $${this.config.totalInvestment}`);
+    console.log(`📊 Сумма ордера: $${this.config.orderAmount}`);
+    console.log(`🛡️ Страховочные ордера: ${this.config.safetyOrders}`);
     console.log(`🎯 Take profit: ${this.config.takeProfit}%`);
 
-    // Place initial buy order
+    // Первая покупка
     await this.placeInitialOrder();
   }
 
   /**
-   * Place the initial buy order at market price
+   * Разместить первоначальный ордер на покупку по рыночной цене
    */
   private async placeInitialOrder(): Promise<void> {
-    // TODO: Get current price from Binance
-    const currentPrice = 0; // Placeholder
+    // TODO: Получить текущую цену с Binance
+    const currentPrice = 0;
     const quantity = this.config.orderAmount / currentPrice;
 
     const order: DCAOrder = {
@@ -74,11 +78,12 @@ export class DCABot {
     };
 
     this.orders.push(order);
-    console.log(`📈 Initial order placed at $${currentPrice}`);
+    console.log(`📈 Первоначальный ордер размещён по $${currentPrice}`);
   }
 
   /**
-   * Handle order filled event
+   * Обработка события заполнения ордера
+   * Обновляет среднюю цену входа и проверяет условия
    */
   async onOrderFilled(orderNumber: number, fillPrice: number, fillQuantity: number): Promise<void> {
     const order = this.orders.find(o => o.orderNumber === orderNumber);
@@ -87,42 +92,42 @@ export class DCABot {
     order.status = 'FILLED';
     order.filledAt = new Date();
 
-    // Update average entry price
+    // Обновить среднюю цену входа
     this.totalQuantity += fillQuantity;
     this.totalInvested += fillPrice * fillQuantity;
     this.avgEntryPrice = this.totalInvested / this.totalQuantity;
 
-    console.log(`✅ Order #${orderNumber} filled at $${fillPrice}`);
-    console.log(`📊 Avg entry: $${this.avgEntryPrice.toFixed(2)}`);
-    console.log(`📦 Total quantity: ${this.totalQuantity.toFixed(8)}`);
+    console.log(`✅ Ордер #${orderNumber} заполнен по $${fillPrice}`);
+    console.log(`📊 Средняя цена: $${this.avgEntryPrice.toFixed(2)}`);
+    console.log(`📦 Общее кол-во: ${this.totalQuantity.toFixed(8)}`);
 
-    // Check if we should place safety order or take profit
+    // Проверить условия для следующего ордера или закрытия
     await this.checkConditions();
   }
 
   /**
-   * Check market conditions and place orders accordingly
+   * Проверить рыночные условия и разместить соответствующие ордера
    */
   private async checkConditions(): Promise<void> {
-    // TODO: Get current price from Binance
+    // TODO: Получить текущую цену с Binance
     const currentPrice = 0;
 
-    // Calculate deviation from avg entry
+    // Рассчитать отклонение от средней цены входа
     this.currentDeviation = ((currentPrice - this.avgEntryPrice) / this.avgEntryPrice) * 100;
 
-    // Check take profit
+    // Проверить take profit (целевая прибыль)
     if (this.currentDeviation >= this.config.takeProfit) {
       await this.executeTakeProfit(currentPrice);
       return;
     }
 
-    // Check stop loss
+    // Проверить stop loss (защита от убытков)
     if (this.config.stopLoss && this.currentDeviation <= -this.config.stopLoss) {
       await this.executeStopLoss(currentPrice);
       return;
     }
 
-    // Check if we should place safety order
+    // Проверить нужен ли страховочный ордер
     const filledOrders = this.orders.filter(o => o.status === 'FILLED').length;
     if (filledOrders <= this.config.safetyOrders) {
       const expectedDeviation = -this.config.safetyOrderDeviation * filledOrders;
@@ -133,7 +138,7 @@ export class DCABot {
   }
 
   /**
-   * Place safety order on price drop
+   * Разместить страховочный ордер при падении цены
    */
   private async placeSafetyOrder(price: number, orderNumber: number): Promise<void> {
     const quantity = this.config.orderAmount / price;
@@ -147,58 +152,58 @@ export class DCABot {
     };
 
     this.orders.push(order);
-    console.log(`🛡️ Safety order #${orderNumber} placed at $${price}`);
+    console.log(`🛡️ Страховочный ордер #${orderNumber} размещён по $${price}`);
   }
 
   /**
-   * Execute take profit (sell all)
+   * Выполнить take profit (продать всё с прибылью)
    */
   private async executeTakeProfit(currentPrice: number): Promise<void> {
     const profit = (currentPrice - this.avgEntryPrice) * this.totalQuantity;
     const profitPercent = ((currentPrice - this.avgEntryPrice) / this.avgEntryPrice) * 100;
 
-    console.log(`🎯 Take profit triggered!`);
-    console.log(`💰 Profit: $${profit.toFixed(2)} (${profitPercent.toFixed(2)}%)`);
+    console.log(`🎯 Take profit сработал!`);
+    console.log(`💰 Прибыль: $${profit.toFixed(2)} (${profitPercent.toFixed(2)}%)`);
 
-    // TODO: Sell all via Binance API
+    // TODO: Продать всё через Binance API
     await this.stop();
   }
 
   /**
-   * Execute stop loss (sell all at loss)
+   * Выполнить stop loss (продать всё с убытком для защиты)
    */
   private async executeStopLoss(currentPrice: number): Promise<void> {
     const loss = (currentPrice - this.avgEntryPrice) * this.totalQuantity;
     const lossPercent = ((currentPrice - this.avgEntryPrice) / this.avgEntryPrice) * 100;
 
-    console.log(`🛑 Stop loss triggered!`);
-    console.log(`📉 Loss: $${loss.toFixed(2)} (${lossPercent.toFixed(2)}%)`);
+    console.log(`🛑 Stop loss сработал!`);
+    console.log(`📉 Убыток: $${loss.toFixed(2)} (${lossPercent.toFixed(2)}%)`);
 
-    // TODO: Sell all via Binance API
+    // TODO: Продать всё через Binance API
     await this.stop();
   }
 
   /**
-   * Stop the bot
+   * Остановить бота
    */
   async stop(): Promise<void> {
     this.isRunning = false;
-    console.log(`🛑 DCA Bot stopped for ${this.config.symbol}`);
+    console.log(`🛑 DCA Bot остановлен для ${this.config.symbol}`);
   }
 
   /**
-   * Get bot statistics
+   * Получить статистику бота
    */
   getStats() {
     return {
       symbol: this.config.symbol,
       isRunning: this.isRunning,
-      avgEntryPrice: this.avgEntryPrice,
-      totalQuantity: this.totalQuantity,
-      totalInvested: this.totalInvested,
-      currentDeviation: this.currentDeviation,
-      ordersFilled: this.orders.filter(o => o.status === 'FILLED').length,
-      ordersTotal: this.orders.length,
+      avgEntryPrice: this.avgEntryPrice,                  // Средняя цена входа
+      totalQuantity: this.totalQuantity,                   // Общее количество
+      totalInvested: this.totalInvested,                   // Всего инвестировано
+      currentDeviation: this.currentDeviation,             // Текущее отклонение
+      ordersFilled: this.orders.filter(o => o.status === 'FILLED').length,    // Заполненные ордера
+      ordersTotal: this.orders.length,                                          // Всего ордеров
     };
   }
 }

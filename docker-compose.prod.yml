@@ -1,7 +1,14 @@
 version: '3.8'
 
+# Production Docker Compose - для развёртывания в продакшен
+# Запуск: docker-compose -f docker-compose.prod.yml up -d
+
 services:
-  # Application Services
+  # ============================================
+  # ПРИЛОЖЕНИЯ (СЕРВИСЫ)
+  # ============================================
+  
+  # Веб-приложение (Next.js)
   web:
     build:
       context: ./apps/web
@@ -16,6 +23,7 @@ services:
       - user-service
     restart: unless-stopped
 
+  # Сервис пользователей
   user-service:
     build:
       context: ./services/user-service
@@ -28,11 +36,13 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     depends_on:
       - postgres
       - redis
     restart: unless-stopped
 
+  # Торговый сервис
   trading-service:
     build:
       context: ./services/trading-service
@@ -43,12 +53,18 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
+      - BINANCE_API_KEY=${BINANCE_API_KEY}
+      - BINANCE_API_SECRET=${BINANCE_API_SECRET}
+      - BINANCE_TESTNET=${BINANCE_TESTNET}
+      - TELEGRAM_BOT_URL=http://telegram-bot:3003
     depends_on:
       - postgres
       - redis
       - kafka
+      - telegram-bot
     restart: unless-stopped
 
+  # AI движок (Python)
   ai-engine:
     build:
       context: ./services/ai-engine
@@ -64,7 +80,26 @@ services:
       - redis
     restart: unless-stopped
 
-  # Infrastructure (same as dev)
+  # Telegram бот для уведомлений
+  telegram-bot:
+    build:
+      context: ./services/telegram-bot
+      dockerfile: Dockerfile
+    container_name: quantum-telegram-bot
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - PORT=3003
+    restart: unless-stopped
+
+  # ============================================
+  # ИНФРАСТРУКТУРА
+  # ============================================
+  
+  # PostgreSQL - основная БД
   postgres:
     image: postgres:15-alpine
     container_name: quantum-postgres
@@ -76,6 +111,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # Redis - кэш и сессии
   redis:
     image: redis:7-alpine
     container_name: quantum-redis
@@ -84,6 +120,7 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  # Kafka - очередь сообщений
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: quantum-kafka
@@ -96,6 +133,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     restart: unless-stopped
 
+  # Zookeeper для Kafka
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: quantum-zookeeper

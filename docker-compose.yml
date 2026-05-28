@@ -116,6 +116,20 @@ services:
     depends_on:
       - prometheus
 
+  # Telegram Bot - уведомления
+  telegram-bot:
+    build:
+      context: ./services/telegram-bot
+      dockerfile: Dockerfile
+    container_name: quantum-telegram-bot
+    ports:
+      - "3003:3003"
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - PORT=3003
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

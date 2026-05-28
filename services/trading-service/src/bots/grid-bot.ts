@@ -1,33 +1,35 @@
 /**
- * Grid Trading Bot
- * Buys low and sells high within a price range
+ * Grid Trading Bot - Сеточный торговый бот
+ * 
+ * Стратегия: покупает дешевле, продаёт дороже в заданном ценовом диапазоне
+ * Лучше всего работает в боковом тренде (рендж рынок)
  */
 
 export interface GridBotConfig {
-  symbol: string;
-  lowerPrice: number;
-  upperPrice: number;
-  gridCount: number;
-  investment: number;
-  mode: 'NEUTRAL' | 'LONG' | 'SHORT';
-  stopLoss?: number;
-  takeProfit?: number;
+  symbol: string;          // Торговая пара (например, BTCUSDT)
+  lowerPrice: number;      // Нижняя граница диапазона
+  upperPrice: number;      // Верхняя граница диапазона
+  gridCount: number;       // Количество уровней сетки (10-200)
+  investment: number;      // Инвестиции (общий капитал)
+  mode: 'NEUTRAL' | 'LONG' | 'SHORT';  // Режим: нейтральный/лонг/шорт
+  stopLoss?: number;       // Stop-loss цена (опционально)
+  takeProfit?: number;     // Take-profit цена (опционально)
 }
 
 export interface GridLevel {
-  price: number;
-  quantity: number;
-  side: 'BUY' | 'SELL';
-  status: 'OPEN' | 'FILLED' | 'CANCELLED';
-  orderId?: string;
+  price: number;                                          // Цена уровня
+  quantity: number;                                       // Количество для торговли
+  side: 'BUY' | 'SELL';                                  // Тип ордера
+  status: 'OPEN' | 'FILLED' | 'CANCELLED';               // Статус ордера
+  orderId?: string;                                       // ID ордера на бирже
 }
 
 export class GridBot {
   private config: GridBotConfig;
   private gridLevels: GridLevel[] = [];
   private isRunning: boolean = false;
-  private totalProfit: number = 0;
-  private totalTrades: number = 0;
+  private totalProfit: number = 0;        // Общая прибыль
+  private totalTrades: number = 0;         // Общее количество сделок
 
   constructor(config: GridBotConfig) {
     this.config = config;
@@ -35,7 +37,8 @@ export class GridBot {
   }
 
   /**
-   * Calculate grid price levels based on configuration
+   * Рассчитать уровни сетки на основе конфигурации
+   * Делит ценовой диапазон на равные интервалы
    */
   private calculateGridLevels(): void {
     const { lowerPrice, upperPrice, gridCount, investment } = this.config;
@@ -58,37 +61,38 @@ export class GridBot {
   }
 
   /**
-   * Start the bot
+   * Запустить бота
+   * Расставляет ордера на покупку ниже текущей цены
+   * И ордера на продажу выше текущей цены
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      throw new Error('Bot is already running');
+      throw new Error('Бот уже запущен');
     }
 
     this.isRunning = true;
-    console.log(`🤖 Grid Bot started for ${this.config.symbol}`);
-    console.log(`📊 Range: $${this.config.lowerPrice} - $${this.config.upperPrice}`);
-    console.log(`📐 Grid count: ${this.config.gridCount}`);
-    console.log(`💰 Investment: $${this.config.investment}`);
+    console.log(`🤖 Grid Bot запущен для ${this.config.symbol}`);
+    console.log(`📊 Диапазон: $${this.config.lowerPrice} - $${this.config.upperPrice}`);
+    console.log(`📐 Количество уровней: ${this.config.gridCount}`);
+    console.log(`💰 Инвестиции: $${this.config.investment}`);
 
-    // Place initial buy orders below current price
-    // Place initial sell orders above current price
-    // TODO: Integrate with Binance API
+    // TODO: Интеграция с Binance API для реальных ордеров
   }
 
   /**
-   * Stop the bot
+   * Остановить бота и отменить все открытые ордера
    */
   async stop(): Promise<void> {
     this.isRunning = false;
-    console.log(`🛑 Grid Bot stopped for ${this.config.symbol}`);
+    console.log(`🛑 Grid Bot остановлен для ${this.config.symbol}`);
     
-    // Cancel all open orders
-    // TODO: Cancel orders via Binance API
+    // TODO: Отменить все открытые ордера через Binance API
   }
 
   /**
-   * Handle filled order event
+   * Обработка события заполнения ордера
+   * Когда ордер на покупку выполнен - ставим ордер на продажу выше
+   * Когда ордер на продажу выполнен - ставим ордер на покупку ниже
    */
   async onOrderFilled(orderId: string, fillPrice: number, fillQuantity: number): Promise<void> {
     const level = this.gridLevels.find(l => l.orderId === orderId);
@@ -98,32 +102,32 @@ export class GridBot {
     this.totalTrades++;
 
     if (level.side === 'BUY') {
-      // Place sell order one grid above
-      const sellPrice = level.price * 1.01; // 1% profit per grid
-      // TODO: Place sell order via Binance API
-      console.log(`📈 Buy filled at $${fillPrice}, placing sell at $${sellPrice}`);
+      // Покупка выполнена - ставим продажу на одну сетку выше
+      const sellPrice = level.price * 1.01; // 1% прибыли с каждой сетки
+      console.log(`📈 Покупка по $${fillPrice}, ставим продажу на $${sellPrice}`);
+      // TODO: Поставить ордер на продажу через Binance API
     } else {
-      // Place buy order one grid below
+      // Продажа выполнена - ставим покупку на одну сетку ниже
       const buyPrice = level.price * 0.99;
-      // TODO: Place buy order via Binance API
-      console.log(`📉 Sell filled at $${fillPrice}, placing buy at $${buyPrice}`);
+      console.log(`📉 Продажа по $${fillPrice}, ставим покупку на $${buyPrice}`);
+      // TODO: Поставить ордер на покупку через Binance API
       
-      // Calculate profit
+      // Считаем прибыль
       this.totalProfit += (fillPrice - level.price) * fillQuantity;
     }
   }
 
   /**
-   * Get bot statistics
+   * Получить статистику бота
    */
   getStats() {
     return {
       symbol: this.config.symbol,
       isRunning: this.isRunning,
-      totalProfit: this.totalProfit,
-      totalTrades: this.totalTrades,
-      activeGrids: this.gridLevels.filter(l => l.status === 'OPEN').length,
-      filledGrids: this.gridLevels.filter(l => l.status === 'FILLED').length,
+      totalProfit: this.totalProfit,        // Общая прибыль
+      totalTrades: this.totalTrades,         // Всего сделок
+      activeGrids: this.gridLevels.filter(l => l.status === 'OPEN').length,    // Активных уровней
+      filledGrids: this.gridLevels.filter(l => l.status === 'FILLED').length,  // Заполненных уровней
     };
   }
 }
