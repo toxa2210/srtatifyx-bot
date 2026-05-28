@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: quantum-hedge
+  labels:
+    name: quantum-hedge
+    environment: production
