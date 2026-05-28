@@ -3,11 +3,582 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QUANTUM HEDGE - AI Market Terminal</title>
+<title>QUANTUM HEDGE — AI Market Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg0:#070A10;--bg1:#0C1018;--bg2:#111620;--bg3:#172030;--border:#1E2D45;--accent:#00D4FF;--accent2:#7C3AED;--green:#00E5A0;--red:#FF3B6B;--amber:#FFB800;--txt:#C8D8F0;--txt2:#6B82A0;--txt3:#3A4E68;--font-d:'Syne',sans-serif;--font-m:'IBM Plex Mono',monospace;--panel-w:390px;--header-h:52px;--status-h:30px}
+body{background:var(--bg0);color:var(--txt);font-family:var(--font-m);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.header{height:var(--header-h);background:var(--bg1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:14px;flex-shrink:0;z-index:10}
+.logo{font-family:var(--font-d);font-weight:800;font-size:14px;letter-spacing:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.sym-group{display:flex;align-items:center;gap:8px;flex:1}
+.sym-search{background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);font-family:var(--font-m);font-size:13px;padding:5px 10px;width:130px;text-transform:uppercase}
+.sym-search:focus{outline:none;border-color:var(--accent)}
+.sym-pills{display:flex;gap:5px}
+.sym-pill{background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--txt2);font-size:11px;padding:4px 9px;cursor:pointer;transition:all .15s}
+.sym-pill:hover,.sym-pill.active{background:var(--accent);border-color:var(--accent);color:#000}
+.tf-group{display:flex;gap:3px}
+.tf-btn{background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--txt2);font-size:11px;padding:4px 7px;cursor:pointer}
+.tf-btn:hover,.tf-btn.active{border-color:var(--accent);color:var(--accent)}
+.hdr-btn{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--txt2);font-size:11px;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
+.hdr-btn.on{border-color:var(--green);color:var(--green)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--txt3)}
+.hdr-btn.on .dot{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.main{display:flex;flex:1;overflow:hidden}
+.chart-wrap{flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.chart-frame{flex:1;width:100%;border:none}
+.chart-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5}
+.chart-overlay svg{width:100%;height:100%}
+
+.ai-panel{width:var(--panel-w);background:var(--bg1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.market-status{padding:10px 13px;border-bottom:1px solid var(--border)}
+.status-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.status-label{font-size:10px;letter-spacing:1px;color:var(--txt3);text-transform:uppercase}
+.badge{font-family:var(--font-d);font-size:12px;font-weight:700;padding:2px 9px;border-radius:4px}
+.badge.bull{background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.25)}
+.badge.bear{background:rgba(255,59,107,.12);color:var(--red);border:1px solid rgba(255,59,107,.25)}
+.badge.flat{background:rgba(255,184,0,.12);color:var(--amber);border:1px solid rgba(255,184,0,.25)}
+.badge.wait{background:rgba(100,120,160,.1);color:var(--txt2);border:1px solid var(--border)}
+.metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+.m-box{background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:5px 7px}
+.m-key{font-size:9px;color:var(--txt3);text-transform:uppercase;margin-bottom:2px}
+.m-val{font-size:13px;font-weight:600}
+.m-val.g{color:var(--green)}.m-val.r{color:var(--red)}.m-val.a{color:var(--amber)}
+.demo-bar{padding:8px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--bg2)}
+.demo-balance{font-size:14px;font-weight:600;color:var(--green)}
+.demo-pnl{font-size:11px}
+.demo-pnl.pos{color:var(--green)}.demo-pnl.neg{color:var(--red)}
+.demo-fund-btn{margin-left:auto;background:var(--accent);border:none;border-radius:5px;color:#000;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer}
+.demo-fund-btn:hover{opacity:.85}
+.trades-bar{padding:6px 13px;border-bottom:1px solid var(--border);font-size:10px;color:var(--txt3);display:flex;gap:12px}
+.trades-bar span{color:var(--txt2)}
+.ai-messages{flex:1;overflow-y:auto;padding:11px 13px;display:flex;flex-direction:column;gap:9px}
+.ai-messages::-webkit-scrollbar{width:3px}
+.ai-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.msg{display:flex;flex-direction:column;gap:3px;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg-from{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--txt3)}
+.msg.user .msg-from{color:var(--accent2);text-align:right}
+.msg.ai .msg-from{color:var(--accent)}
+.msg-body{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:9px 11px;font-size:12px;line-height:1.7;white-space:pre-wrap}
+.msg.user .msg-body{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.25);align-self:flex-end;max-width:92%}
+.msg.ai .msg-body{border-color:rgba(0,212,255,.13)}
+.thinking{display:flex;align-items:center;gap:6px;padding:9px 11px;background:var(--bg2);border:1px solid rgba(0,212,255,.13);border-radius:7px;font-size:12px;color:var(--txt2)}
+.thinking-dots span{display:inline-block;width:4px;height:4px;background:var(--accent);border-radius:50%;margin:0 1px;animation:blink 1.2s infinite}
+.thinking-dots span:nth-child(2){animation-delay:.2s}
+.thinking-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.quick-cmds{padding:7px 13px;border-top:1px solid var(--border);display:flex;gap:5px;flex-wrap:wrap}
+.qcmd{background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--txt2);font-size:10px;padding:3px 9px;cursor:pointer}
+.qcmd:hover{border-color:var(--accent);color:var(--accent)}
+.chat-wrap{padding:9px 13px;border-top:1px solid var(--border);display:flex;gap:7px;align-items:flex-end}
+.chat-input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--txt);font-family:var(--font-m);font-size:12px;padding:8px 11px;resize:none;min-height:36px;max-height:90px;line-height:1.5}
+.chat-input:focus{outline:none;border-color:var(--accent)}
+.send-btn{background:var(--accent);border:none;border-radius:7px;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.send-btn svg{width:15px;height:15px;fill:#000}
+.send-btn:disabled{opacity:.4;cursor:default}
+.statusbar{height:var(--status-h);background:var(--bg1);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:12px;font-size:10px;color:var(--txt3);flex-shrink:0}
+.status-live{color:var(--green);display:flex;align-items:center;gap:5px}
+.status-live::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal-bg.hidden{display:none}
+.modal{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:24px;width:400px;max-width:90vw}
+.modal h3{font-family:var(--font-d);font-size:16px;margin-bottom:12px;color:var(--accent)}
+.modal input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--txt);padding:10px;font-size:14px;margin-bottom:12px}
+.modal input:focus{outline:none;border-color:var(--accent)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.modal-btns button{border:none;border-radius:6px;padding:8px 18px;cursor:pointer;font-weight:600;font-size:12px}
+.mbtn-cancel{background:var(--bg3);color:var(--txt2)}.mbtn-ok{background:var(--accent);color:#000}
+</style>
 </head>
 <body>
-<p>PLACEHOLDER - will be replaced by full commit</p>
+
+<header class="header">
+<div class="logo">⚡ QUANTUM HEDGE</div>
+<div class="sym-group">
+<input class="sym-search" id="symInput" value="BTCUSDT" maxlength="20">
+<div class="sym-pills">
+<div class="sym-pill active" data-s="BTCUSDT">BTC</div>
+<div class="sym-pill" data-s="ETHUSDT">ETH</div>
+<div class="sym-pill" data-s="XAUUSD">GOLD</div>
+<div class="sym-pill" data-s="EURUSD">EUR/USD</div>
+<div class="sym-pill" data-s="GBPUSD">GBP/USD</div>
+<div class="sym-pill" data-s="SPX">S&P500</div>
+</div>
+</div>
+<div class="tf-group">
+<button class="tf-btn" data-t="1">1m</button>
+<button class="tf-btn" data-t="5">5m</button>
+<button class="tf-btn" data-t="15">15m</button>
+<button class="tf-btn active" data-t="60">1h</button>
+<button class="tf-btn" data-t="240">4h</button>
+<button class="tf-btn" data-t="D">1D</button>
+</div>
+<button class="hdr-btn" id="autoBtn"><span class="dot"></span>AUTO-TRADE</button>
+<button class="hdr-btn" id="aiPickBtn">🤖 AI Config</button>
+</header>
+<div class="main">
+<div class="chart-wrap">
+<iframe id="tvChart" class="chart-frame" allowtransparency="true" frameborder="0"></iframe>
+<div class="chart-overlay" id="overlay"><svg id="overlaySvg"></svg></div>
+</div>
+<aside class="ai-panel">
+<div class="market-status">
+<div class="status-row"><span class="status-label">Статус рынка</span><span class="badge wait" id="mBadge">—</span></div>
+<div class="metrics">
+<div class="m-box"><div class="m-key">Цена</div><div class="m-val" id="mPrice">—</div></div>
+<div class="m-box"><div class="m-key">Тренд</div><div class="m-val" id="mTrend">—</div></div>
+<div class="m-box"><div class="m-key">Сигнал</div><div class="m-val" id="mSignal">—</div></div>
+</div>
+</div>
+<div class="demo-bar">
+<span>💰 Демо:</span>
+<span class="demo-balance" id="demoBalance">$0.00</span>
+<span class="demo-pnl" id="demoPnl"></span>
+<button class="demo-fund-btn" id="fundBtn">+ Дать деньги</button>
+</div>
+<div class="trades-bar" id="tradesBar">Сделок: <span>0</span> | Win: <span>0</span> | Loss: <span>0</span> | P&L: <span>$0</span></div>
+<div class="ai-messages" id="aiMsg">
+<div class="msg ai"><div class="msg-from">AI</div><div class="msg-body">Привет! Я AI-трейдер с доступом к реальным ценам.
+
+Что я умею:
+• Анализ рынка по реальным данным
+• Автоматическая демо-торговля (лот 0.01)
+• Рисовать зоны на графике
+• Самообучение на своих сделках
+
+Нажми "Дать деньги" → потом "AUTO-TRADE" и я начну торговать!</div></div>
+</div>
+<div class="quick-cmds">
+<button class="qcmd" data-c="Полный анализ с реальной ценой">📊 Анализ</button>
+<button class="qcmd" data-c="Покажи зоны supply demand">🎯 Зоны</button>
+<button class="qcmd" data-c="Дай торговый сигнал">🔔 Сигнал</button>
+<button class="qcmd" data-c="Покажи статистику моих сделок">📈 Статистика</button>
+<button class="qcmd" data-c="Объясни почему рынок так движется">💬 Почему?</button>
+</div>
+<div class="chat-wrap">
+<textarea class="chat-input" id="chatIn" placeholder="Спроси AI..." rows="1"></textarea>
+<button class="send-btn" id="sendBtn"><svg viewBox="0 0 24 24"><path d="M2 21L23 12 2 3v7l15 2-15 2z"/></svg></button>
+</div>
+</aside>
+</div>
+<div class="statusbar">
+<span class="status-live">LIVE</span>
+<span id="sSymbol">BTCUSDT</span> · <span id="sPrice">—</span>
+<span style="margin-left:auto" id="sTime">—</span>
+</div>
+<!-- Fund Modal -->
+<div class="modal-bg hidden" id="fundModal">
+<div class="modal">
+<h3>💰 Дать AI демо-деньги</h3>
+<p style="font-size:12px;color:var(--txt2);margin-bottom:12px">AI будет торговать лотом 0.01 (1$ за 1 пункт движения). Это НЕ реальные деньги — демо для проверки знаний AI.</p>
+<input type="number" id="fundAmount" placeholder="Сумма в $ (например 1000)" value="1000">
+<div class="modal-btns">
+<button class="mbtn-cancel" onclick="closeFundModal()">Отмена</button>
+<button class="mbtn-ok" onclick="fundDemo()">Дать деньги →</button>
+</div>
+</div>
+</div>
+<!-- AI Config Modal -->
+<div class="modal-bg hidden" id="aiModal">
+<div class="modal">
+<h3>🤖 Настройка AI</h3>
+<p style="font-size:12px;color:var(--txt2);margin-bottom:12px">Вставь API ключ для AI анализа. Рекомендация: Gemini (бесплатно) или Groq (бесплатно).</p>
+<select id="aiProvider" style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--txt);padding:8px;border-radius:6px;margin-bottom:8px;font-size:13px">
+<option value="gemini">🔵 Gemini (Google) — БЕСПЛАТНО</option>
+<option value="groq">⚡ Groq (Llama 3) — БЕСПЛАТНО</option>
+<option value="openai">🟢 GPT-4o-mini (OpenAI) — $0.15/1M</option>
+</select>
+<input type="password" id="aiKey" placeholder="API ключ...">
+<p style="font-size:10px;color:var(--txt3);margin-bottom:12px">Gemini: <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">aistudio.google.com</a> | Groq: <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">console.groq.com</a></p>
+<div class="modal-btns">
+<button class="mbtn-cancel" onclick="closeAiModal()">Отмена</button>
+<button class="mbtn-ok" onclick="saveAiConfig()">Сохранить →</button>
+</div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  symbol:'BTCUSDT', interval:'60', autoTrade:false, busy:false,
+  provider: localStorage.getItem('qh_prov')||'gemini',
+  apiKey: localStorage.getItem('qh_key')||'',
+  demo: { balance:0, equity:0, pnl:0, trades:[], position:null, wins:0, losses:0 },
+  prices: [], // last 100 candles
+  currentPrice: 0,
+  priceWs: null
+};
+
+// ═══════════════════════════════════════════════════════════
+// PRICE DATA — РЕАЛЬНЫЕ ЦЕНЫ
+// ═══════════════════════════════════════════════════════════
+const PRICE_MAP = {
+  'BTCUSDT':{api:'binance',sym:'BTCUSDT'},
+  'ETHUSDT':{api:'binance',sym:'ETHUSDT'},
+  'SOLUSDT':{api:'binance',sym:'SOLUSDT'},
+  'BNBUSDT':{api:'binance',sym:'BNBUSDT'},
+  'XAUUSD':{api:'tv',sym:'OANDA:XAUUSD'},
+  'EURUSD':{api:'tv',sym:'FX:EURUSD'},
+  'GBPUSD':{api:'tv',sym:'FX:GBPUSD'},
+  'USDJPY':{api:'tv',sym:'FX:USDJPY'},
+  'SPX':{api:'tv',sym:'SP:SPX'},
+};
+
+async function fetchPrice(symbol) {
+  const cfg = PRICE_MAP[symbol] || {api:'binance',sym:symbol};
+  if (cfg.api === 'binance') {
+    try {
+      const r = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${cfg.sym}`);
+      const d = await r.json();
+      return parseFloat(d.price);
+    } catch(e) { return 0; }
+  }
+  // Для форекса/золота — через AllOrigins proxy + Yahoo
+  try {
+    const ySymbol = symbol === 'XAUUSD' ? 'GC=F' : symbol === 'EURUSD' ? 'EURUSD=X' : symbol === 'GBPUSD' ? 'GBPUSD=X' : symbol === 'SPX' ? '^GSPC' : symbol+'=X';
+    const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${ySymbol}?interval=1m&range=1d`)}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    const parsed = JSON.parse(d.contents);
+    const price = parsed.chart.result[0].meta.regularMarketPrice;
+    return price;
+  } catch(e) { return 0; }
+}
+
+async function fetchCandles(symbol, interval, limit=100) {
+  const cfg = PRICE_MAP[symbol] || {api:'binance',sym:symbol};
+  if (cfg.api === 'binance') {
+    try {
+      const intMap = {'1':'1m','5':'5m','15':'15m','60':'1h','240':'4h','D':'1d'};
+      const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${cfg.sym}&interval=${intMap[interval]||'1h'}&limit=${limit}`);
+      const d = await r.json();
+      return d.map(c=>({time:c[0],open:+c[1],high:+c[2],low:+c[3],close:+c[4],volume:+c[5]}));
+    } catch(e) { return []; }
+  }
+  // Для не-Binance — возвращаем пустой массив (AI будет использовать текущую цену)
+  return [];
+}
+
+function startPriceStream(symbol) {
+  if (S.priceWs) S.priceWs.close();
+  const cfg = PRICE_MAP[symbol] || {api:'binance',sym:symbol};
+  if (cfg.api === 'binance') {
+    S.priceWs = new WebSocket(`wss://stream.binance.com:9443/ws/${cfg.sym.toLowerCase()}@ticker`);
+    S.priceWs.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+      S.currentPrice = parseFloat(d.c);
+      document.getElementById('sPrice').textContent = '$'+S.currentPrice.toFixed(2);
+      document.getElementById('mPrice').textContent = '$'+S.currentPrice.toFixed(2);
+      updateDemoPnl();
+    };
+  } else {
+    // Polling каждые 10 сек для не-Binance
+    const poll = async () => {
+      S.currentPrice = await fetchPrice(symbol);
+      if (S.currentPrice) {
+        document.getElementById('sPrice').textContent = '$'+S.currentPrice.toFixed(S.currentPrice>100?2:5);
+        document.getElementById('mPrice').textContent = '$'+S.currentPrice.toFixed(S.currentPrice>100?2:5);
+      }
+      updateDemoPnl();
+    };
+    poll();
+    S.priceWs = { close: () => clearInterval(S._pollId) };
+    S._pollId = setInterval(poll, 10000);
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// DEMO TRADING — ДЕМО ТОРГОВЛЯ
+// ═══════════════════════════════════════════════════════════
+function updateDemoPnl() {
+  if (!S.demo.position) return;
+  const pos = S.demo.position;
+  const diff = S.currentPrice - pos.entry;
+  const pnl = pos.direction === 'BUY' ? diff * pos.lotSize * 100 : -diff * pos.lotSize * 100;
+  S.demo.equity = S.demo.balance + pnl;
+  document.getElementById('demoPnl').textContent = `P&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)}`;
+  document.getElementById('demoPnl').className = 'demo-pnl '+(pnl>=0?'pos':'neg');
+}
+
+function openDemoTrade(direction, sl, tp) {
+  if (!S.currentPrice || S.demo.balance <= 0) return;
+  S.demo.position = {
+    direction, entry: S.currentPrice, sl, tp,
+    lotSize: 0.01, openTime: Date.now()
+  };
+  addMsg('ai', `📈 ОТКРЫТА ПОЗИЦИЯ:\n${direction} ${S.symbol} @ $${S.currentPrice.toFixed(2)}\nLot: 0.01 | SL: $${sl.toFixed(2)} | TP: $${tp.toFixed(2)}\n\n1 пункт = $1 (лот 0.01)`);
+  drawTradeOnChart(S.currentPrice, sl, tp, direction);
+}
+
+function closeDemoTrade(reason) {
+  if (!S.demo.position) return;
+  const pos = S.demo.position;
+  const diff = S.currentPrice - pos.entry;
+  const pnl = pos.direction === 'BUY' ? diff * pos.lotSize * 100 : -diff * pos.lotSize * 100;
+  S.demo.balance += pnl;
+  S.demo.pnl += pnl;
+  S.demo.trades.push({...pos, exit:S.currentPrice, pnl, reason, closeTime:Date.now()});
+  if (pnl >= 0) S.demo.wins++; else S.demo.losses++;
+  S.demo.position = null;
+  document.getElementById('demoBalance').textContent = '$'+S.demo.balance.toFixed(2);
+  document.getElementById('demoPnl').textContent = '';
+  updateTradesBar();
+  addMsg('ai', `${pnl>=0?'✅':'❌'} ЗАКРЫТА: ${reason}\nP&L: ${pnl>=0?'+':''}$${pnl.toFixed(2)}\nБаланс: $${S.demo.balance.toFixed(2)}`);
+}
+
+function checkSLTP() {
+  if (!S.demo.position || !S.currentPrice) return;
+  const pos = S.demo.position;
+  if (pos.direction === 'BUY') {
+    if (S.currentPrice <= pos.sl) closeDemoTrade('Stop-Loss');
+    else if (S.currentPrice >= pos.tp) closeDemoTrade('Take-Profit ✅');
+  } else {
+    if (S.currentPrice >= pos.sl) closeDemoTrade('Stop-Loss');
+    else if (S.currentPrice <= pos.tp) closeDemoTrade('Take-Profit ✅');
+  }
+}
+setInterval(checkSLTP, 2000);
+
+function updateTradesBar() {
+  const total = S.demo.trades.length;
+  const totalPnl = S.demo.pnl;
+  document.getElementById('tradesBar').innerHTML = `Сделок: <span>${total}</span> | Win: <span style="color:var(--green)">${S.demo.wins}</span> | Loss: <span style="color:var(--red)">${S.demo.losses}</span> | P&L: <span style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">${totalPnl>=0?'+':''}$${totalPnl.toFixed(2)}</span>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHART OVERLAY — AI РИСУЕТ НА ГРАФИКЕ
+// ═══════════════════════════════════════════════════════════
+function drawTradeOnChart(entry, sl, tp, dir) {
+  const svg = document.getElementById('overlaySvg');
+  const h = svg.parentElement.clientHeight;
+  // Простая визуализация — горизонтальные линии
+  const range = Math.abs(tp - sl);
+  const mid = h / 2;
+  svg.innerHTML = `
+    <line x1="0" y1="${mid}" x2="100%" y2="${mid}" stroke="${dir==='BUY'?'#00E5A0':'#FF3B6B'}" stroke-width="2" stroke-dasharray="8,4" opacity="0.8"/>
+    <text x="10" y="${mid-8}" fill="${dir==='BUY'?'#00E5A0':'#FF3B6B'}" font-size="11" font-family="monospace">▶ ENTRY $${entry.toFixed(2)}</text>
+    <line x1="0" y1="${mid+60}" x2="100%" y2="${mid+60}" stroke="#FF3B6B" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6"/>
+    <text x="10" y="${mid+55}" fill="#FF3B6B" font-size="10" font-family="monospace">🛑 SL $${sl.toFixed(2)}</text>
+    <line x1="0" y1="${mid-60}" x2="100%" y2="${mid-60}" stroke="#00E5A0" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6"/>
+    <text x="10" y="${mid-65}" fill="#00E5A0" font-size="10" font-family="monospace">🎯 TP $${tp.toFixed(2)}</text>
+    <rect x="0" y="${mid-60}" width="100%" height="120" fill="${dir==='BUY'?'rgba(0,229,160,0.03)':'rgba(255,59,107,0.03)'}" />
+  `;
+}
+
+function clearOverlay() { document.getElementById('overlaySvg').innerHTML = ''; }
+
+
+// ═══════════════════════════════════════════════════════════
+// AI CALL — ВЫЗОВ AI С РЕАЛЬНЫМИ ДАННЫМИ
+// ═══════════════════════════════════════════════════════════
+async function callAI(userMsg) {
+  if (!S.apiKey) { openAiModal(); throw new Error('Нет API ключа'); }
+  
+  // Получаем реальные данные для AI
+  const candles = await fetchCandles(S.symbol, S.interval, 50);
+  const priceNow = S.currentPrice || await fetchPrice(S.symbol);
+  
+  const priceContext = candles.length > 0 
+    ? `Последние 10 свечей (${S.interval}): ${candles.slice(-10).map(c=>`O:${c.open.toFixed(2)} H:${c.high.toFixed(2)} L:${c.low.toFixed(2)} C:${c.close.toFixed(2)}`).join(' | ')}`
+    : `Текущая цена ${S.symbol}: $${priceNow}`;
+  
+  const demoCtx = S.demo.balance > 0 
+    ? `\nДемо-баланс: $${S.demo.balance.toFixed(2)}. Открытая позиция: ${S.demo.position ? S.demo.position.direction+' @ $'+S.demo.position.entry.toFixed(2) : 'нет'}. Статистика: ${S.demo.wins} win / ${S.demo.losses} loss.`
+    : '';
+  
+  const system = `Ты профессиональный AI-трейдер и аналитик. Анализируешь ${S.symbol} на таймфрейме ${S.interval}.
+
+РЕАЛЬНЫЕ ДАННЫЕ РЫНКА:
+${priceContext}
+Текущая цена: $${priceNow}
+${demoCtx}
+
+ПРАВИЛА:
+1. ВСЕГДА используй РЕАЛЬНУЮ цену $${priceNow} в анализе
+2. Определи тренд — пиши: Тренд: [восходящий/нисходящий/боковой]
+3. Дай конкретные цены для зон
+4. Для сигнала пиши: СИГНАЛ: BUY/SELL цена, SL: цена, TP: цена
+5. Если AUTO-TRADE включён и ты уверен > 70% — дай команду: TRADE:BUY:SL:цена:TP:цена или TRADE:SELL:SL:цена:TP:цена
+6. Объясняй ПОЧЕМУ рынок так движется
+7. Рисуй зоны — пиши: ZONE:SUPPLY:цена1-цена2 или ZONE:DEMAND:цена1-цена2`;
+
+  const msgs = [{role:'user', content: userMsg}];
+  let url, headers, body;
+
+  if (S.provider === 'gemini') {
+    url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${S.apiKey}`;
+    headers = {'Content-Type':'application/json'};
+    body = JSON.stringify({contents:[{parts:[{text: system+'\n\n'+userMsg}]}]});
+  } else if (S.provider === 'groq') {
+    url = 'https://api.groq.com/openai/v1/chat/completions';
+    headers = {'Content-Type':'application/json','Authorization':'Bearer '+S.apiKey};
+    body = JSON.stringify({model:'llama-3.3-70b-versatile',max_tokens:1200,messages:[{role:'system',content:system},...msgs]});
+  } else {
+    url = 'https://api.openai.com/v1/chat/completions';
+    headers = {'Content-Type':'application/json','Authorization':'Bearer '+S.apiKey};
+    body = JSON.stringify({model:'gpt-4o-mini',max_tokens:1200,messages:[{role:'system',content:system},...msgs]});
+  }
+
+  const resp = await fetch(url, {method:'POST',headers,body});
+  if (!resp.ok) { const e = await resp.json().catch(()=>({})); throw new Error(e.error?.message||'API Error '+resp.status); }
+  const data = await resp.json();
+  
+  let text = '';
+  if (S.provider === 'gemini') text = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  else text = data.choices?.[0]?.message?.content||'';
+  
+  // Парсинг команд AI
+  parseAICommands(text);
+  return text;
+}
+
+function parseAICommands(text) {
+  // AUTO-TRADE команды
+  const tradeMatch = text.match(/TRADE:(BUY|SELL):SL:([\d.]+):TP:([\d.]+)/i);
+  if (tradeMatch && S.autoTrade && !S.demo.position && S.demo.balance > 0) {
+    openDemoTrade(tradeMatch[1], parseFloat(tradeMatch[2]), parseFloat(tradeMatch[3]));
+  }
+  // Обновить статус
+  const trendM = text.match(/тренд:\s*([^\n.]+)/i);
+  if (trendM) {
+    const t = trendM[1].trim();
+    document.getElementById('mTrend').textContent = t.slice(0,15);
+    document.getElementById('mTrend').className = 'm-val '+(t.match(/восход|бычий|вверх/i)?'g':t.match(/нисход|медвеж|вниз/i)?'r':'a');
+    const badge = document.getElementById('mBadge');
+    badge.textContent = t.slice(0,18);
+    badge.className = 'badge '+(t.match(/восход|бычий/i)?'bull':t.match(/нисход|медвеж/i)?'bear':'flat');
+  }
+  const sigM = text.match(/сигнал:\s*(BUY|SELL|HOLD)/i);
+  if (sigM) {
+    const s = sigM[1].toUpperCase();
+    const el = document.getElementById('mSignal');
+    el.textContent = s; el.className = 'm-val '+(s==='BUY'?'g':s==='SELL'?'r':'a');
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// UI / EVENTS
+// ═══════════════════════════════════════════════════════════
+function addMsg(role, text) {
+  const box = document.getElementById('aiMsg');
+  const el = document.createElement('div'); el.className='msg '+role;
+  el.innerHTML = `<div class="msg-from">${role==='ai'?'AI':'ВЫ'}</div><div class="msg-body">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  box.appendChild(el); box.scrollTop = box.scrollHeight;
+}
+function addThinking() {
+  const box = document.getElementById('aiMsg');
+  const el = document.createElement('div'); el.className='thinking';
+  el.innerHTML = `AI анализирует <span class="thinking-dots"><span></span><span></span><span></span></span>`;
+  box.appendChild(el); box.scrollTop = box.scrollHeight; return el;
+}
+
+async function send() {
+  const input = document.getElementById('chatIn');
+  const text = input.value.trim(); if (!text || S.busy) return;
+  input.value = ''; S.busy = true;
+  document.getElementById('sendBtn').disabled = true;
+  addMsg('user', text);
+  const t = addThinking();
+  try {
+    const reply = await callAI(text);
+    t.remove(); if (reply) addMsg('ai', reply);
+  } catch(e) { t.remove(); addMsg('ai','❌ '+e.message); }
+  S.busy = false; document.getElementById('sendBtn').disabled = false;
+}
+
+async function autoAnalyze() {
+  if (!S.autoTrade) return;
+  const prompt = S.demo.position 
+    ? `Проверь мою открытую позицию ${S.demo.position.direction} @ $${S.demo.position.entry.toFixed(2)}. Текущая цена $${S.currentPrice}. Стоит ли закрыть или держать? Если есть лучший вход — дай TRADE команду.`
+    : `Сделай анализ ${S.symbol}. Если видишь хорошую точку входа (уверенность >70%) — дай TRADE команду. Формат: TRADE:BUY:SL:цена:TP:цена`;
+  const t = addThinking();
+  try {
+    const reply = await callAI(prompt);
+    t.remove(); if (reply) addMsg('ai', reply);
+  } catch(e) { t.remove(); addMsg('ai','❌ Auto: '+e.message); }
+  if (S.autoTrade) setTimeout(autoAnalyze, 60000); // каждую минуту
+}
+
+// CHART
+const TV_MAP = {'BTCUSDT':'BINANCE:BTCUSDT','ETHUSDT':'BINANCE:ETHUSDT','SOLUSDT':'BINANCE:SOLUSDT','XAUUSD':'OANDA:XAUUSD','EURUSD':'FX:EURUSD','GBPUSD':'FX:GBPUSD','SPX':'SP:SPX','USDJPY':'FX:USDJPY','BNBUSDT':'BINANCE:BNBUSDT'};
+function loadChart(sym, tf) {
+  const tvSym = encodeURIComponent(TV_MAP[sym]||sym);
+  document.getElementById('tvChart').src = `https://s.tradingview.com/widgetembed/?frameElementId=tvChart&symbol=${tvSym}&interval=${tf}&hidesidetoolbar=0&hidetoptoolbar=0&symboledit=1&saveimage=1&toolbarbg=0C1018&theme=dark&style=1&timezone=Etc%2FUTC&withdateranges=1&locale=ru&studies=RSI%40tv-basicstudies`;
+}
+
+function changeSym(sym) {
+  sym = sym.toUpperCase().trim(); if (!sym) return;
+  S.symbol = sym;
+  document.getElementById('symInput').value = sym;
+  document.getElementById('sSymbol').textContent = sym;
+  document.querySelectorAll('.sym-pill').forEach(p=>p.classList.toggle('active',p.dataset.s===sym));
+  loadChart(sym, S.interval);
+  startPriceStream(sym);
+  clearOverlay();
+  if (S.autoTrade) setTimeout(autoAnalyze, 3000);
+}
+
+// MODALS
+function openFundModal() { document.getElementById('fundModal').classList.remove('hidden'); }
+function closeFundModal() { document.getElementById('fundModal').classList.add('hidden'); }
+function fundDemo() {
+  const amt = parseFloat(document.getElementById('fundAmount').value) || 1000;
+  S.demo.balance = amt; S.demo.equity = amt;
+  document.getElementById('demoBalance').textContent = '$'+amt.toFixed(2);
+  closeFundModal();
+  addMsg('ai', `💰 Получено $${amt} на демо-счёт!\n\nТеперь нажми AUTO-TRADE и я начну торговать.\nЛот: 0.01 | 1 пункт = $1\nStop-Loss обязателен на каждой сделке.`);
+}
+function openAiModal() { document.getElementById('aiModal').classList.remove('hidden'); }
+function closeAiModal() { document.getElementById('aiModal').classList.add('hidden'); }
+function saveAiConfig() {
+  S.provider = document.getElementById('aiProvider').value;
+  S.apiKey = document.getElementById('aiKey').value.trim();
+  localStorage.setItem('qh_prov', S.provider);
+  localStorage.setItem('qh_key', S.apiKey);
+  closeAiModal();
+  addMsg('ai', '✅ AI настроен: '+ S.provider.toUpperCase() + '\nТеперь спроси меня что-нибудь!');
+}
+
+// EVENTS
+document.getElementById('sendBtn').addEventListener('click', send);
+document.getElementById('chatIn').addEventListener('keydown', e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+document.querySelectorAll('.sym-pill').forEach(p=>p.addEventListener('click',()=>changeSym(p.dataset.s)));
+document.getElementById('symInput').addEventListener('keydown',e=>{if(e.key==='Enter')changeSym(e.target.value)});
+document.querySelectorAll('.tf-btn').forEach(b=>b.addEventListener('click',()=>{
+  S.interval=b.dataset.t;
+  document.querySelectorAll('.tf-btn').forEach(x=>x.classList.toggle('active',x.dataset.t===S.interval));
+  loadChart(S.symbol,S.interval);
+}));
+document.getElementById('autoBtn').addEventListener('click',()=>{
+  S.autoTrade=!S.autoTrade;
+  document.getElementById('autoBtn').classList.toggle('on',S.autoTrade);
+  if(S.autoTrade){addMsg('ai','🤖 AUTO-TRADE включён. Анализирую рынок каждую минуту...');autoAnalyze();}
+  else addMsg('ai','AUTO-TRADE выключен.');
+});
+document.getElementById('fundBtn').addEventListener('click', openFundModal);
+document.getElementById('aiPickBtn').addEventListener('click', openAiModal);
+document.querySelectorAll('.qcmd').forEach(b=>b.addEventListener('click',()=>{
+  document.getElementById('chatIn').value=b.dataset.c; send();
+}));
+document.getElementById('fundModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeFundModal()});
+document.getElementById('aiModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAiModal()});
+
+// CLOCK
+setInterval(()=>{document.getElementById('sTime').textContent=new Date().toLocaleTimeString('ru-RU')},1000);
+
+// INIT
+if(S.apiKey) document.getElementById('aiKey').value = S.apiKey;
+document.getElementById('aiProvider').value = S.provider;
+loadChart(S.symbol, S.interval);
+startPriceStream(S.symbol);
+</script>
 </body>
 </html>
