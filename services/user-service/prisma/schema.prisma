@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  
+  // Profile
+  firstName String?
+  lastName  String?
+  phone     String?
+  country   String?
+  
+  // Subscription
+  tier      SubscriptionTier @default(FREE)
+  
+  // Security
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
+  
+  // Status
+  emailVerified Boolean @default(false)
+  isActive      Boolean @default(true)
+  isSuspended   Boolean @default(false)
+  
+  // KYC
+  kycLevel      Int @default(1)
+  kycVerified   Boolean @default(false)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLoginAt DateTime?
+  
+  // Relations
+  apiKeys       ApiKey[]
+  sessions      Session[]
+  auditLogs     AuditLog[]
+  
+  @@map("users")
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  exchange  String
+  apiKeyEncrypted    String
+  apiSecretEncrypted String
+  
+  permissions Json?
+  ipWhitelist String[]
+  
+  isActive  Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("api_keys")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token         String   @unique
+  refreshToken  String   @unique
+  
+  ipAddress     String
+  userAgent     String
+  deviceId      String?
+  
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@map("sessions")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  action    String
+  resource  String
+  details   Json?
+  
+  ipAddress String
+  userAgent String
+  
+  result    String   // SUCCESS, FAILURE
+  
+  createdAt DateTime @default(now())
+  
+  @@map("audit_logs")
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  VIP
+  ENTERPRISE
+}
