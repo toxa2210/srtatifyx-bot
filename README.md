@@ -1,1 +1,0 @@
-# srtatifyx-bot
