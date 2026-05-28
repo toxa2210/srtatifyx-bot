@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUANTUM HEDGE - AI Trading Terminal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">QUANTUM HEDGE</span>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-link active">Trading</a>
+                <a href="#" class="nav-link">Portfolio</a>
+                <a href="#" class="nav-link">Bots</a>
+                <a href="#" class="nav-link">AI Signals</a>
+            </nav>
+        </div>
+        <div class="header-right">
+            <button class="btn-voice" id="voiceBtn" title="Голосовое управление">
+                🎤
+            </button>
+            <div class="user-info">
+                <span class="balance">$10,000.00</span>
+                <div class="user-avatar">👤</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Left Sidebar - Symbols -->
+        <aside class="sidebar-left">
+            <div class="search-box">
+                <input type="text" id="symbolSearch" placeholder="🔍 Поиск...">
+            </div>
+            <div class="symbols-list" id="symbolsList">
+                <!-- Заполнится JS -->
+            </div>
+        </aside>
+
+        <!-- Center - Chart -->
+        <main class="chart-area">
+            <!-- Chart Toolbar -->
+            <div class="chart-toolbar">
+                <div class="symbol-info">
+                    <h2 id="currentSymbol">BTCUSDT</h2>
+                    <span id="currentPrice" class="price">$0.00</span>
+                    <span id="priceChange" class="change">0.00%</span>
+                </div>
+                <div class="timeframes">
+                    <button class="tf-btn" data-tf="1m">1m</button>
+                    <button class="tf-btn" data-tf="5m">5m</button>
+                    <button class="tf-btn" data-tf="15m">15m</button>
+                    <button class="tf-btn active" data-tf="1h">1h</button>
+                    <button class="tf-btn" data-tf="4h">4h</button>
+                    <button class="tf-btn" data-tf="1d">1D</button>
+                </div>
+                <div class="chart-tools">
+                    <button class="tool-btn" id="aiAnalyzeBtn" title="AI Анализ">🤖 AI Анализ</button>
+                    <button class="tool-btn" id="drawTrendBtn" title="Тренд">📈</button>
+                    <button class="tool-btn" id="drawSupportBtn" title="Поддержка">📊</button>
+                    <button class="tool-btn" id="clearBtn" title="Очистить">🗑️</button>
+                </div>
+            </div>
+
+            <!-- Chart Container -->
+            <div class="chart-container" id="chartContainer"></div>
+
+            <!-- Chart Stats -->
+            <div class="chart-stats">
+                <div class="stat">
+                    <span class="stat-label">24h Volume</span>
+                    <span id="volume24h" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">24h High</span>
+                    <span id="high24h" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">24h Low</span>
+                    <span id="low24h" class="stat-value">$0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Market Cap</span>
+                    <span class="stat-value">--</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar - AI & Trading -->
+        <aside class="sidebar-right">
+            <!-- AI Assistant -->
+            <div class="panel ai-panel">
+                <div class="panel-header">
+                    <h3>🤖 AI Ассистент</h3>
+                </div>
+                <div class="ai-messages" id="aiMessages">
+                    <div class="ai-message">
+                        <strong>AI:</strong> Привет! Я ваш AI помощник. Спросите меня про анализ или скажите команду голосом.
+                    </div>
+                </div>
+                <div class="ai-input">
+                    <input type="text" id="aiInput" placeholder="Спросите меня...">
+                    <button id="aiSendBtn">➤</button>
+                </div>
+                <div class="ai-quick">
+                    <button class="quick-btn" data-cmd="analyze">📊 Анализ</button>
+                    <button class="quick-btn" data-cmd="signals">🔔 Сигналы</button>
+                    <button class="quick-btn" data-cmd="trend">📈 Тренд</button>
+                </div>
+            </div>
+
+            <!-- Trade Panel -->
+            <div class="panel trade-panel">
+                <div class="panel-header">
+                    <h3>💹 Торговля</h3>
+                </div>
+                <div class="trade-tabs">
+                    <button class="tab active" data-side="buy">КУПИТЬ</button>
+                    <button class="tab" data-side="sell">ПРОДАТЬ</button>
+                </div>
+                <div class="trade-form">
+                    <div class="form-group">
+                        <label>Цена (USDT)</label>
+                        <input type="number" id="tradePrice" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Количество</label>
+                        <input type="number" id="tradeAmount" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Всего (USDT)</label>
+                        <input type="number" id="tradeTotal" placeholder="0.00" readonly>
+                    </div>
+                    <div class="amount-buttons">
+                        <button class="amount-btn" data-pct="25">25%</button>
+                        <button class="amount-btn" data-pct="50">50%</button>
+                        <button class="amount-btn" data-pct="75">75%</button>
+                        <button class="amount-btn" data-pct="100">100%</button>
+                    </div>
+                    <button class="btn-trade buy" id="executeTradeBtn">КУПИТЬ BTC</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <span id="connectionStatus" class="status-connected">🟢 Подключено к Binance</span>
+        <span id="lastUpdate">Обновлено: только что</span>
+        <span class="version">v1.0.0</span>
+    </div>
+
+    <!-- Voice Modal -->
+    <div class="voice-modal hidden" id="voiceModal">
+        <div class="voice-content">
+            <div class="voice-icon">🎤</div>
+            <p class="voice-text" id="voiceText">Слушаю...</p>
+            <button class="btn-close" id="voiceCloseBtn">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="js/binance.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/voice.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
